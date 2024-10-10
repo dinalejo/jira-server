@@ -201,3 +201,12 @@ https://medium.com/@jewelski/quickly-set-up-a-local-postgres-database-using-dock
 ####  JIRA API DEVELOPER
 
 https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-issues/#api-group-issues
+
+
+
+### Borrado de ambiente
+
+
+docker rm jira-node-01 jira-node-02 jira-node-04 jira-pg-node-01  container-pgadmin
+docker volume rm deploy_jira-home-node-01 deploy_jira-home-node-02  deploy_jira-home-node-03 deploy_jira-home-node-04 deploy_jira-shared-home deploy_postgres-data
+docker network rm deploy_jira-network
