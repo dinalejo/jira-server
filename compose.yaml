@@ -1,0 +1,122 @@
+services:
+  postgres:
+    container_name: jira-pg-node-01
+    image: postgres
+    hostname: localhost
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: test_db
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    restart: unless-stopped
+    networks: 
+      - jira-network
+#PG ADMIN
+  pgadmin:
+    container_name: container-pgadmin
+    image: dpage/pgadmin4
+    depends_on:
+      - postgres
+    ports:
+      - "5050:80"
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: root
+    restart: unless-stopped
+    networks:
+      - jira-network
+#JIRA
+  jira01:
+    container_name: jira-node-01
+    image: atlassian/jira-software:9.15.2-ubuntu-jdk17
+    ports:
+      - "8081:8080"
+    volumes:
+      - jira-home-node-01:/var/atlassian/application-data/jira
+      - jira-shared-home:/var/atlassian/shared-application-data/jira
+    entrypoint: |
+       sh -c "cp /var/atlassian/shared-application-data/jira/common/cluster.properties-node-01 /var/atlassian/application-data/jira/cluster.properties;
+       /opt/atlassian/jira/bin/start-jira.sh -fg"
+    restart: unless-stopped
+    networks: 
+      - jira-network
+    depends_on:
+      - postgres
+    healthcheck:
+      test: curl --fail http://localhost:8081/status || exit 1
+      interval: 40s
+      timeout: 30s
+      retries: 3
+      start_period: 60s
+  jira02:
+    container_name: jira-node-02
+    image: atlassian/jira-software:9.15.2-ubuntu-jdk17
+    ports:
+      - "8082:8080"
+    volumes:
+      - jira-home-node-02:/var/atlassian/application-data/jira
+      - jira-shared-home:/var/atlassian/shared-application-data/jira
+    entrypoint: |
+       sh -c "cp /var/atlassian/shared-application-data/jira/common/cluster.properties-node-02 /var/atlassian/application-data/jira/cluster.properties;
+       cp /var/atlassian/shared-application-data/jira/common/dbconfig.xml /var/atlassian/application-data/jira/dbconfig.xml;
+       /opt/atlassian/jira/bin/start-jira.sh -fg"
+    restart: unless-stopped
+    networks: 
+      - jira-network
+    depends_on:
+      - jira01
+    healthcheck:
+      test: curl --fail http://localhost:8082/status || exit 1
+      interval: 40s
+      timeout: 30s
+      retries: 3
+      start_period: 60s
+  jira03:
+    container_name: jira-node-03
+    image: atlassian/jira-software:9.15.2-ubuntu-jdk17
+    ports:
+      - "8083:8080"
+    volumes:
+      - jira-home-node-03:/var/atlassian/application-data/jira
+      - jira-shared-home:/var/atlassian/shared-application-data/jira
+    entrypoint: |
+       sh -c "cp /var/atlassian/shared-application-data/jira/common/cluster.properties-node-03 /var/atlassian/application-data/jira/cluster.properties;
+       cp /var/atlassian/shared-application-data/jira/common/dbconfig.xml /var/atlassian/application-data/jira/dbconfig.xml;
+       /opt/atlassian/jira/bin/start-jira.sh -fg"
+    depends_on:
+      - jira02
+    restart: unless-stopped
+    networks: 
+      - jira-network
+  #jira04:
+  #  container_name: jira-node-04
+  #  image: atlassian/jira-software:9.15.2-ubuntu-jdk17
+  #  ports:
+  #    - "8084:8080"
+  #  volumes:
+  #    - jira-home-node-04:/var/atlassian/application-data/jira
+  #    - jira-shared-home:/var/atlassian/shared-application-data/jira
+  #  entrypoint: |
+  #     sh -c "cp /var/atlassian/shared-application-data/jira/common/cluster.properties-node-04 /var/atlassian/application-data/jira/cluster.properties;
+  #     cp /var/atlassian/shared-application-data/jira/common/dbconfig.xml /var/atlassian/application-data/jira/dbconfig.xml;
+  #     /opt/atlassian/jira/bin/start-jira.sh -fg"
+  #  restart: unless-stopped
+  #  networks: 
+  #    - jira-network
+  #  depends_on:
+  #    - jira03
+volumes:
+  postgres-data:
+  jira-home-node-01:
+  jira-home-node-02:
+  jira-home-node-03:
+  #jira-home-node-04:
+  jira-shared-home:
+
+networks:
+  jira-network:
+    driver: bridge
+
